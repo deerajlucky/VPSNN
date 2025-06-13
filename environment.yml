@@ -94,7 +94,6 @@ dependencies:
     - pylint==2.15.4
     - pyparsing==3.0.9
     - pyrsistent==0.18.1
-    - python-graphviz==0.20.1
     - pytools==2022.1.12
     - pytz==2022.1
     - pywavelets==1.3.0
@@ -115,9 +114,9 @@ dependencies:
     - toml==0.10.2
     - tomli==2.0.1
     - tomlkit==0.11.5
-    - torch==1.8.0+cu111
+    - torch
     - torchsummary==1.5.1
-    - torchvision==0.9.0+cu111
+    - torchvision==0.9.0
     - typing-extensions==4.2.0
     - urllib3==1.26.9
     - werkzeug==2.1.2
