@@ -8,7 +8,10 @@ def realline(m, params):
     x = dilation * (t - translation * m / 2)
     return x
 
-def test_hermite_shapes(m, n, params):
+def test_hermite_shapes():
+    m = 101
+    n = 8
+    params = [0.1, 0.0]
     x = realline(m, params)
     Phi, dPhi, ind = vp.ada_hermite(m, n, params)
 
@@ -20,7 +23,4 @@ def test_hermite_shapes(m, n, params):
     plt.show()
 
 '''Check the shapes of the Hermite functions visually'''
-m = 101
-n = 7
-params = [0.1, 0.0]
-test_hermite_shapes(m, n, params)
+test_hermite_shapes()

@@ -65,7 +65,7 @@ def train_classifier(classifier, epoch, optimizer, train_loader, device, logging
     return normalized_loss
 
 
-def test_classifier(classifier, epoch, test_loader, device, logging, writer, n_steps=0):
+def run_classifier(classifier, epoch, test_loader, device, logging, writer, n_steps=0):
     """helper for batch testing of a pytorch model
 
     Args:

@@ -2,10 +2,9 @@ import nn_layers.vp_layers as vp
 import matplotlib.pyplot as plt
 import torch.nn as nn
 import torch
-import pickle
 import os
-from classifier_models.utils import train_classifier, test_classifier, return_model_accuracy
-from datasets import load_dataset
+from classifier_models.utils import train_classifier, run_classifier, return_model_accuracy
+from dataloaders import load_dataset
 import logging
 from torch.utils.tensorboard import SummaryWriter
 import scipy.io as sio
@@ -24,55 +23,43 @@ def add_hook(net):
     return hook_handles
 
 def load_weights(name, path):
+    # Modified to parse plain text accuracy log file
     model_path = os.path.join(path, f'{name}.dat')
-    with open(model_path, 'rb') as model:
-        return pickle.load(model)
+    results = []
+    with open(model_path, 'r') as f:
+        lines = f.readlines()
+    for line in lines:
+        if "Train accuracy" in line and "Test accuracy" in line:
+            parts = line.strip().split(", ")
+            epoch = int(parts[0].split(":")[1].replace("]", ""))
+            train_acc = float(parts[1].split(":")[1].replace("%", ""))
+            test_acc = float(parts[2].split(":")[1].replace("%", ""))
+            results.append({"epoch": epoch, "train_accuracy": train_acc, "test_accuracy": test_acc})
+    return results
 
-def rebuild_network(params):
-    modules = []
-    for key, value in params['VPNet_params'].items():
-        layername = key.split('_', 1)[0]
-        if 'LinearLayer' == layername:
-            out_features, in_features = value[0].shape
-            linearlayer = nn.Linear(in_features, out_features)
-            linearlayer.weight.data = torch.transpose(torch.tensor(value[0], dtype=torch.float32), -1, -2)
-            linearlayer.bias.data = torch.tensor(value[1], dtype=torch.float32)
-            modules.append(linearlayer)
-        elif 'ReLU' == layername:
-            modules.append(nn.ReLU())
-        elif 'VPLayer' == layername:
-            vp_layer = vp.vp_layer(vp.ada_hermite, params['n_in'], params['VP'], len(value), device='cpu', penalty=params['penalty'], init=value)
-            modules.append(vp_layer)
-        else:
-            raise UnknownLayer
-    modules.append(nn.Softmax(dim=-1))
-    return nn.Sequential(*modules)
+# The rest of your code expects a model, but output.dat is just logs.
+# So, let's just print the parsed results for demonstration.
 
-def test_signal(n):
-    mat = sio.loadmat('C:/Users/Kovács Ottó/Documents/GitHub/SVPNN/NativeVPNet/data/ecg_test.mat')
-    test_x = torch.tensor(mat['samples'], dtype=torch.float32)
-    test_y = torch.tensor(mat['labels'], dtype=torch.float32)
-    return test_x[n].unsqueeze(0).unsqueeze(0), test_y[n].unsqueeze(0).unsqueeze(0)
+path = 'C:\\Users\\DELL\\VPSNN\\notebooks'
+name = 'output'
+results = load_weights(name, path)
 
-'''Checking the projection.'''
-path = 'C:/Users/Kovács Ottó/Documents/GitHub/SVPNN/tests/manual/models'
-name = 'pretrained_model'
-params = load_weights(name, path)
-classifier = rebuild_network(params)
-logging.basicConfig(filename='pretrained_VP.log', level=logging.INFO)
-writer = SummaryWriter(log_dir=f'{path}')
+# Example: print all epochs' accuracies
+for entry in results:
+    print(f"Epoch {entry['epoch']}: Train accuracy = {entry['train_accuracy']}%, Test accuracy = {entry['test_accuracy']}%")
 
-# Evaluate the model on a single test sigal
-signal, target = test_signal(0)
-#add_hook(classifier)
-pred = classifier(signal)
-criterion = nn.BCELoss()
-loss = criterion(pred, target)
+# If you want to plot the accuracies:
+epochs = [entry['epoch'] for entry in results]
+train_acc = [entry['train_accuracy'] for entry in results]
+test_acc = [entry['test_accuracy'] for entry in results]
 
-# Evaluate test accuracy
-batch_size = 512
-data_path = os.path.join(os.getcwd(), 'data', 'ECG')
-train_loader, test_loader = load_dataset_ann.load_ecg_real(batch_size, data_path)
-accuracy = return_model_accuracy(classifier, test_loader, device='cpu', logging=logging, writer=writer, n_steps=0)
-print('Test accuracy:', accuracy.item())
+plt.plot(epochs, train_acc, label='Train Accuracy')
+plt.plot(epochs, test_acc, label='Test Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy (%)')
+plt.legend()
+plt.title('Training and Test Accuracy per Epoch')
+plt.show()
+
+
 
